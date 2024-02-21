@@ -1,0 +1,1361 @@
+create database farmacia_TP
+go
+use farmacia_TP
+go
+set dateformat dmy;
+CREATE TABLE provincias (
+    id INT identity,
+    nombre_provincia VARCHAR(50)
+	constraint pk_provincias primary key (id)
+)
+CREATE TABLE localidades (
+    id INT identity,
+    nombre_localidad VARCHAR(50),
+    id_provincia INT,
+    CONSTRAINT pk_localidades PRIMARY KEY (id),
+    CONSTRAINT fk_Localidades_Provincias FOREIGN KEY (id_provincia) REFERENCES Provincias(id)
+) 
+CREATE TABLE condiciones_IVA (
+    id INT identity,
+    nombre_condicion VARCHAR(50)
+	constraint pk_condiciones_IVA primary key(id)
+)
+CREATE TABLE tipos_documentos (
+    id INT identity,
+    nombre_tipo VARCHAR(50)
+	constraint pk_tipos_documentos primary key (id)
+)
+CREATE TABLE clientes (
+    id INT identity,
+    DNI INT,
+    Nombre VARCHAR(50),
+    Apellido VARCHAR(50),
+    id_condicion INT,
+    id_tipo_documento INT, -- Nueva columna para el tipo de documento
+	calle varchar(100),
+	nro_calle int,
+	id_localidad int,
+	constraint pk_clientes primary key (id),
+    constraint fk_clientes_condiciones_iva FOREIGN KEY (id_condicion) 
+	REFERENCES Condiciones_IVA(id),
+    constraint fk_clientes_tipos_documentos FOREIGN KEY (id_tipo_documento) 
+	REFERENCES tipos_documentos(id),
+	constraint fk_clientes_localidades foreign key (id_localidad)
+	references localidades (id)
+)
+CREATE TABLE sucursales
+(
+id int identity,
+descripcion varchar(50),
+direccion varchar(100),
+id_localidad int
+CONSTRAINT pk_sucursales PRIMARY KEY(id),
+CONSTRAINT fk_sucursales_localidades FOREIGN KEY (id_localidad) 
+REFERENCES localidades(id)
+)
+create table tipo_empleados (
+id int identity,
+descripcion varchar(100)
+constraint pk_tipo_empleados primary key (id)
+)
+
+create table empleados(
+legajo int identity,
+id_tipo_empleado int,
+nombre varchar(50),
+apellido varchar(50),
+fecha_nac datetime,
+fecha_alta datetime,
+id_sucursal int
+constraint pk_empleados primary key (legajo),
+constraint fk_tipo_empleado foreign key (id_tipo_empleado)
+references tipo_empleados(id),
+constraint fk_id_sucursal foreign key (id_sucursal)
+references sucursales (id)
+)
+create table tipos_suministros(
+id int,
+nombre varchar(50)
+constraint pk_tipos_suministros primary key(id)
+)
+create table tipos_ventas(
+id int,
+descripcion varchar(100)
+constraint pk_tipos_ventas primary key (id)
+)
+create table suministros (
+id int,
+descripcion varchar(100),
+codigo_barra bigint,
+id_tipo int,
+id_tipo_venta int,
+precio float
+constraint pk_suministros primary key (id),
+constraint fk_suministros_tipos_suministros foreign key (id_tipo)
+references tipos_suministros(id),
+constraint fk_suministros_tipos_ventas foreign key (id_tipo_venta)
+references tipos_ventas(id)
+)
+CREATE TABLE stocks (
+id_sucursal int,
+id_suministro int,
+stock int
+CONSTRAINT pk_stocks PRIMARY KEY(id_sucursal, id_suministro),
+CONSTRAINT fk_stocks_sucursales FOREIGN KEY (id_sucursal) 
+REFERENCES sucursales(id),
+CONSTRAINT fk_stocks_suministros FOREIGN KEY (id_suministro) 
+REFERENCES suministros(id)
+)
+CREATE TABLE recetas (
+    id INT identity,
+    paciente VARCHAR(100),
+    DNI INT,
+    medico VARCHAR(100),
+    fecha datetime,
+    id_suministro INT,
+    CONSTRAINT pk_recetas PRIMARY KEY (id),
+    CONSTRAINT fk_recetas_suministros FOREIGN KEY (id_suministro) 
+	REFERENCES suministros(id)
+)
+CREATE TABLE obras_sociales
+(
+id int IDENTITY,
+nombre Varchar(50),
+id_condicionIVA int,
+cuit bigint,
+CONSTRAINT pk_obras_sociales PRIMARY KEY(id),
+CONSTRAINT fk_obras_sociales_condicionIVA FOREIGN KEY (id_condicionIVA) 
+REFERENCES condiciones_IVA(id)
+)
+CREATE TABLE Proveedores
+(
+id int identity,
+nombre varchar(100),
+direccion varchar(100),
+id_localidad int,
+cuit bigint
+CONSTRAINT pk_proveedores PRIMARY KEY(id),
+CONSTRAINT fk_proveedores_localidades FOREIGN KEY (id_localidad) 
+REFERENCES localidades(id)
+)
+CREATE TABLE tipos_contacto
+(
+id int identity,
+descripcion varchar(50)
+CONSTRAINT pk_tipos_contacto PRIMARY KEY(id)
+)
+CREATE TABLE Contactos (
+id int identity,
+id_tipos_contacto int,
+descripcion varchar(100),
+id_obra int,
+id_sucursal int,
+id_cliente int,
+id_empleado int,
+id_proveedor int
+CONSTRAINT pk_contactos PRIMARY KEY(id),
+CONSTRAINT fk_contactos_tiposcontacto FOREIGN KEY (id_tipos_contacto) 
+REFERENCES tipos_contacto(id),
+CONSTRAINT fk_contactos_obrassociales FOREIGN KEY (id_obra) 
+REFERENCES obras_sociales(id),
+CONSTRAINT fk_contactos_sucursales FOREIGN KEY (id_sucursal) 
+REFERENCES sucursales(id),
+CONSTRAINT fk_contactos_clientes FOREIGN KEY (id_cliente) 
+REFERENCES clientes(id),
+CONSTRAINT fk_contactos_empleados FOREIGN KEY (id_empleado) 
+REFERENCES empleados(legajo),
+CONSTRAINT fk_contactos_proveedores FOREIGN KEY (id_proveedor) 
+REFERENCES Proveedores(id)
+)
+CREATE TABLE pedidos (
+id int identity,
+id_sucursal int,
+id_proveedor int,
+id_empleado int,
+transportista varchar (100),
+fecha  datetime,
+constraint id_pedidos PRIMARY KEY (id),
+constraint fk_pedidos_sucursal FOREIGN KEY (id_sucursal) 
+references Sucursales (id),
+constraint fk_pedidos_proveedor FOREIGN KEY (id_proveedor) 
+references Proveedores (id),
+constraint fk_pedidos_id_empleado FOREIGN KEY (id_empleado) 
+references Empleados (legajo)
+) 
+
+CREATE TABLE detalles_pedidos (
+id int identity,
+id_pedidos int,
+id_suministro int,
+cantidad int
+constraint id_detalles_pedidos PRIMARY KEY (id),
+constraint fk_detalles_pedidos_pedidos FOREIGN KEY (id_pedidos) 
+references pedidos (id),
+constraint fk_detalles_pedidos_suministros FOREIGN KEY (id_suministro) 
+references suministros (id)
+)
+
+CREATE TABLE descuentos (
+id int identity,
+id_obra int,
+id_localidad int,
+id_suministro int,
+descuento int
+CONSTRAINT pk_descuentos PRIMARY KEY(id),
+CONSTRAINT fk_descuentos_obrasociales FOREIGN KEY (id_obra) 
+REFERENCES obras_sociales(id),
+CONSTRAINT fk_descuentos_localidades FOREIGN KEY (id_localidad) 
+REFERENCES localidades(id),
+CONSTRAINT fk_descuentos_suministros FOREIGN KEY (id_suministro) 
+REFERENCES suministros(id)
+)
+create table medios_pagos (
+id int identity,
+descripcion varchar(100),
+recargo float, 
+constraint id_medio_pagos PRIMARY KEY (id)
+)
+CREATE TABLE facturas (
+numero int identity,
+fecha datetime,
+id_cliente int,
+id_sucursal int,
+id_empleado int,
+pagado bit
+CONSTRAINT pk_facturas PRIMARY KEY(numero),
+CONSTRAINT fk_facturas_clientes FOREIGN KEY (id_cliente) 
+REFERENCES clientes(id),
+CONSTRAINT fk_facturas_sucursal FOREIGN KEY (id_sucursal) 
+REFERENCES sucursales(id),
+CONSTRAINT fk_facturas_empleado FOREIGN KEY (id_empleado) 
+REFERENCES empleados(legajo),
+)
+create table medios_pagos_X_factura(
+id int identity,
+id_medio_pago int,
+id_factura int,
+cuotas int
+constraint id_medios_pagos_X_factura PRIMARY KEY (id)
+constraint fk_medios_pagos_X_factura_medio_pago FOREIGN KEY (id_medio_pago) 
+references medios_pagos (id),
+constraint fk_medios_pagos_X_factura FOREIGN KEY (id_factura) 
+references facturas (numero)
+) 
+CREATE TABLE detalles_facturas
+(
+id int identity,
+id_factura int,
+id_suministro int,
+id_descuento int,
+cantidad int,
+precio float
+CONSTRAINT pk_detalles_facturas PRIMARY KEY(id),
+CONSTRAINT fk_detalles_facturas FOREIGN KEY (id_factura) 
+REFERENCES facturas(numero),
+CONSTRAINT fk_detalles_suministros FOREIGN KEY (id_suministro) 
+REFERENCES suministros(id),
+CONSTRAINT fk_detalles_descuento FOREIGN KEY (id_descuento) 
+REFERENCES descuentos(id),
+)
+
+--tipos empleados gonza
+INSERT INTO Tipo_empleados (descripcion) VALUES ('Farmaceutico');
+INSERT INTO Tipo_empleados (descripcion) VALUES ('Cajero');
+INSERT INTO Tipo_empleados (descripcion) VALUES ('Limpieza');
+INSERT INTO Tipo_empleados (descripcion) VALUES ('Asistente de venta');
+
+--tipos suministros valen
+Insert INTO tipos_suministros (id, nombre) values (1 ,'Medicamentos');
+Insert INTO tipos_suministros (id, nombre) values (2 ,'Hogar');
+Insert INTO tipos_suministros (id, nombre) values (3 ,'Dermocosmética');
+Insert INTO tipos_suministros (id, nombre) values (4 ,'Belleza');
+Insert INTO tipos_suministros (id, nombre) values (5 ,'Bebés');
+
+
+--tipos ventas VALEN
+Insert INTO tipos_ventas (id, descripcion) values (1 ,'Venta Libre');
+Insert INTO tipos_ventas (id, descripcion) values (2 ,'Venta Bajo Receta');
+Insert INTO tipos_ventas (id, descripcion) values (3 ,'Venta Bajo Receta Archivada');
+
+--provincias gonza
+INSERT INTO Provincias (nombre_provincia) VALUES ('Buenos Aires');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Córdoba');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Santa Fe');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Mendoza');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Tucumán');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Entre Ríos');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Salta');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Misiones');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Chaco');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Corrientes');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Santiago del Estero');
+INSERT INTO Provincias (nombre_provincia) VALUES ('San Juan');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Jujuy');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Río Negro');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Formosa');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Neuquén');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Chubut');
+INSERT INTO Provincias (nombre_provincia) VALUES ('San Luis');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Catamarca');
+INSERT INTO Provincias (nombre_provincia) VALUES ('La Rioja');
+INSERT INTO Provincias (nombre_provincia) VALUES ('La Pampa');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Santa Cruz');
+INSERT INTO Provincias (nombre_provincia) VALUES ('Tierra del Fuego');
+
+--localidades Gonza
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('La Plata', 1);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Mar del Plata', 1);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Córdoba', 2);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Villa Carlos Paz',2);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Rosario', 3);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Santa Fe', 3);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Mendoza', 4);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Rafael', 4);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Miguel de Tucumán', 5);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Yerba Buena', 5);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Paraná', 6);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Concordia', 6);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Salta', 7);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Cafayate', 7);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Posadas', 8);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Puerto Iguazú', 8);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Resistencia', 9);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Barranqueras', 9);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Corrientes', 10);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Goya', 10)
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Santiago del Estero', 11);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('La Banda', 11);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Juan', 12);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Rivadavia', 12);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Salvador de Jujuy', 13);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Palpalá', 13);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Viedma', 14);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Bariloche', 14);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Formosa', 15);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Clorinda', 15);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Neuquén', 16);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Centenario', 16);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Rawson', 17);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Comodoro Rivadavia', 17);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Luis', 18);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Villa Mercedes', 18);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('San Fernando del Valle de Catamarca', 19);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Andalgalá', 19);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('La Rioja', 20);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Chilecito', 20);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Santa Rosa', 21);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('General Pico', 21);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Río Gallegos', 22);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Caleta Olivia', 22);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Ushuaia', 23);
+INSERT INTO Localidades (nombre_localidad, id_provincia) VALUES ('Río Grande', 23);
+
+--condiciones_iva GONZA
+Insert INTO Condiciones_IVA (nombre_condicion) values ('IVA Responsable Inscripto');
+Insert INTO Condiciones_IVA (nombre_condicion) values ('IVA Responsable no Inscripto');
+Insert INTO Condiciones_IVA (nombre_condicion) values ('IVA no Responsable');
+Insert INTO Condiciones_IVA (nombre_condicion) values ('IVA Sujeto exento');
+Insert INTO Condiciones_IVA (nombre_condicion) values ('Consumidor Final');
+Insert INTO Condiciones_IVA (nombre_condicion) values ('Responsable Monotributo');
+
+--tipo_documentos GONZA
+INSERT INTO Tipos_documentos (nombre_tipo) VALUES ('DNI');
+INSERT INTO Tipos_documentos (nombre_tipo) VALUES ('Pasaporte');
+INSERT INTO Tipos_documentos (nombre_tipo) VALUES ('Documento extranjero');
+INSERT INTO Tipos_documentos (nombre_tipo) VALUES ('Libreta Cívica');
+INSERT INTO Tipos_documentos (nombre_tipo) VALUES ('Libreta de Enrolamiento');
+
+--tipos_contacto GONZA
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Telefono');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Email');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Telefono Fijo');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Fax');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Redes Sociales');
+
+--mediospagos Gonza
+INSERT INTO Medios_pagos (descripcion, recargo) VALUES ('Efectivo', 0.00);
+INSERT INTO Medios_pagos (descripcion, recargo) VALUES ('Tarjeta de crédito',
+15.00);
+INSERT INTO Medios_pagos (descripcion, recargo) VALUES ('Transferencia bancaria',
+0.00);
+INSERT INTO Medios_pagos (descripcion, recargo) VALUES ('Tarjeta de debito',
+10.00);
+INSERT INTO Medios_pagos (descripcion, recargo) VALUES ('Cheque', 35.00);
+
+--tipos contacto Gonza
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Telefono');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Email');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Telefono Fijo');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Fax');
+INSERT INTO Tipos_contacto (descripcion) VALUES ('Redes Sociales');
+
+--SUMINISTROS valen
+
+Insert INTO suministros (id, descripcion, codigo_barra, id_tipo, id_tipo_venta, precio) 
+values 			
+(1 ,'Aspirina 100mg', 723456789012, 1, 1, 200),
+(2 ,'Aspirina 500mg', 787654321098, 1, 1, 500),
+(3 ,'Hioscina', 756789012345, 1, 1, 1000),
+(4 ,'Paracetamol 1000mg', 743210987654, 1, 1, 500),
+(5 ,'Loratadina 10mg', 721098765432, 1, 1, 1100),
+(6 ,'Ibuprofeno 600mg', 734567890123, 1, 2, 2000),
+(7 ,'Difenhidramina', 790123456789, 1, 2, 2500),
+(8 ,'Dexametasona Colirio', 778901234567, 1, 2, 1800),
+(9 ,'Diclofenac 100mg', 765432109876, 1, 2, 3000),
+(10 ,'Betametasona Amp. 2ml', 709876543210, 1, 2, 900),
+(11 ,'Lorazepam 2.5mg', 743210987654, 1, 3, 1500),
+(12 ,'Clonazepam 0.5mg', 787654321098, 1, 3, 900),
+(13 ,'Amoxicilina 500mg', 776543210987, 1, 3, 1500),
+(14 ,'Amoxicilina 875mg', 734567890123, 1, 3, 2500),
+(15 ,'Azitromicina 500mg', 790123456789, 1, 3, 3000),
+(16 ,'Pañuelos descartables', 521098765432, 2, 1, 250),
+(17 ,'Lisoform Aerosol', 556789012345, 2, 1, 800),
+(18 ,'Papel Higienico', 545678901234, 2, 1, 350),
+(19 ,'Rollos de Cocina', 567890123456, 2, 1, 500),
+(20 ,'Raid aerosol', 532109876543, 2, 1, 1000),
+(21 ,'Agua micelar', 878901234567, 3, 1, 2500),
+(22 ,'Protector Solar 50fps', 810987654321, 3, 1, 5000),
+(23 ,'Jabon Antiacné', 843210987654, 3, 1, 2100),
+(24 ,'Crema Humectante', 889012345678, 3, 1, 3500),
+(25 ,'Shampoo natural', 856789012345, 3, 1, 900),
+(26 ,'Rímel', 209876543210, 4, 1, 3000),
+(27 ,'Afeitadora 3 hojas', 287654321098, 4, 1, 400),
+(28 ,'Pinza para depilar', 234567890123, 4, 1, 350),
+(29 ,'Cortauñas', 243210987654, 4, 1, 500),
+(30 ,'Manteca de cacao', 276543210987, 4, 1, 450),
+(31 ,'Leche nutrilon 1', 421098765432, 5, 1, 5000),
+(32 ,'Pañales XL', 478901234567, 5, 1, 8750),
+(33 ,'Toallas húmedas', 490123456789, 5, 1, 900),
+(34 ,'Colonia para bebés', 467890123456, 5, 1, 1000),
+(36 ,'Chupete', 423456789012, 5, 1, 1300)
+
+--OBRASOCIALES Gonza
+INSERT INTO Obras_sociales (nombre, id_condicionIVA, cuit)
+VALUES ('OSDE', 1, 30500006613);
+INSERT INTO Obras_sociales (nombre, id_condicionIVA, cuit)
+VALUES ('Swiss Medical', 1, 30711655197);
+INSERT INTO Obras_sociales (nombre, id_condicionIVA, cuit)
+VALUES ('Galeno', 1, 30500008454);
+INSERT INTO Obras_sociales (nombre, id_condicionIVA, cuit)
+VALUES ('Medifé', 1, 30500010084);
+INSERT INTO Obras_sociales (nombre, id_condicionIVA, cuit)
+VALUES ('GEA', 1, 30999027489);
+
+--CLIENTES GUILLE
+
+
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(34258525,'Carlos','Villagrán',5,1,'Vicente López',30,1)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(40258265,'Pedro','Picapiedras',5,1,'Rio de Janeiro',56,2)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(40254256,'Antonio','Rios',5,1,'Sarmiento',75,3)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(40235758,'Sofia','Vergara',5,1,'Chacabuco',1500,3)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(33214256,'Arnold','Swatzeneger',5,1,'San Martín',1750,4)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(25689514,'Rodrigo','Noya',5,1,'Catamarca',750,5)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(12325478,'Facundo','Arana',5,1,'Mariano Fragueiro',45,6)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(20356669,'Javier','Milei',5,1,'Juan B. Justo',785,7)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(45232101,'Sergio','Massa',5,1,'Av Libertador',10,8)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(25888777,'Patricia','Bullrich',5,1,'Alem',452,9)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(36145225,'Catalina','Espósito',5,1,'Ricardo Balbin',420,10)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(47258369,'Guillermo','Toledo',5,1,'Rio de janeiro',120,11)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(47522247,'Valentin','Amoroso',5,1,'Lopez y Planes',250,12)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(21258254,'Gonzalo','Gutierres',5,1,'Velez Sarsfield',450,13)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(40245736,'Jessica','Peralta',5,1,'Uruguay',40,14)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(22045647,'Fabriccio','Coloccini',5,1,'Rio Negro',27,15)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(33698745,'Julian','Alvarez',5,1,'Rodriguez del busto',80,16)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(4785142,'Federico','Obregón',5,1,'Av Los Reartes',30,17)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(44523781,'Marta','Oliva',5,1,'Storni',32,18)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(25478512,'Raimundo','Rios',1,1,'Miguel Cané',47,19)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(24522203,'Alejo','Rodriguez',1,1,'Rancagua',4560,20)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(23498190,'Esmeralda','Verdol',1,1,'Capdevila',1520,21)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(78901134,'Maria','Becerra',1,1,'Viamonte',120,22)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(391405888,'Paula','Chavez',1,1,'Gral Deheza',42,23)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(345000230,'Anuel','López',1,1,'Av Perón',65,24)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(198443666,'Bill','Gates',1,1,'Unión',42,25)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(982139002,'Filomena','Dominguez',1,1,'San Carlos',90,26)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(34882900,'Gilberto','Silva',5,1,'Antonio Ovides',40,27)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(23900178,'Amadeo','Luna',5,1,'Av Cárcano',47,28)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(34900213,'Facundo','Fábregas',5,1,'Los Nogales',30,29)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(4581140,'Penelope','Cruz',1,1,'Acampis',21,30)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(30665713,'Antonio','Banderas',1,1,'San francisco',203,31)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(23479821,'Manuela','Castañeira',1,1,'Remedios de Escalada',204,32)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(3467891,'Alexis','Mcalister',1,1,'Santa Fé',452,33)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(50123789,'Mabel','Mendez',1,1,'Los Gladiolos',475,34)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(50773890,'Eduardo','Echenique',1,1,'Recreo',480,35)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(27268237,'Silvio','Silva',1,1,'Venezuela',44,36)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(39556061,'Armando','Paredes',1,1,'Francia',130,37)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(3562154,'Pablo','Monzón',1,1,'José Zaravia',750,38)
+INSERT INTO clientes(DNI,Nombre,Apellido,id_condicion,id_tipo_documento,calle,nro_calle,id_localidad) values(39498140,'Ernesto','Gómez',1,1,'José Aguero',750,39)
+
+--EMPLEADOS Gonza
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Juan', 'Pérez', '15/05/1990', '01/01/2020');
+INSERT INTO Empleados(id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'María', 'González', '20/08/1985', '10/03/2019');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Carlos', 'López', '03/11/1992', '05/06/2021');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Laura', 'Fernández', '12/02/1988', '15/09/2018');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Pedro', 'Rodríguez', '29/07/1995', '20/02/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Ana', 'Martínez', '08/04/1991', '11/11/2017');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Luis', 'Sánchez', '17/09/1987', '03/04/2023');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Sofía', 'Torres', '24/12/1993', '08/08/2016');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Martín', 'Ramos', '07/03/1989', '15/01/2021');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Lucía', 'Gómez', '22/06/1996', '20/10/2019');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Diego', 'Hernández', '09/01/1984', '12/05/2017');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Carolina', 'Díaz', '18/04/1990', '08/07/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Gustavo', 'Ortega', '27/11/1988', '25/02/2018');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Marcela', 'Silva', '14/03/1994', '10/09/2020');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Fernando', 'Paz', '03/08/1991', '22/12/2017');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Camila', 'Luna', '11/02/1997', '05/03/2021');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Roberto', 'Mendoza', '26/07/1986', '18/06/2019');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Valentina', 'Vargas', '10/10/1993', '30/09/2018');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Javier', 'Cruz', '04/05/1989', '15/12/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Mariana', 'Navarro', '21/09/1995', '28/07/2017');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (1, 'Carlos', 'González', '15/02/1985', '10/01/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Laura', 'Pérez', '22/07/1990', '05/03/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (3, 'Javier', 'López', '12/11/1988', '18/05/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (4, 'María', 'Rodríguez', '30/04/1992', '27/07/2022');
+INSERT INTO Empleados (id_tipo_empleado, nombre, apellido, fecha_nac,
+fecha_alta)
+VALUES (2, 'Gabriel', 'Fernández', '08/09/1987', '03/09/2022');
+
+--PROVEEDORES GUILLE
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('La Serena','Los Rulemanes 3456',1,20356784562)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('KFC','Los Quebrachos 1600',2,20358224532)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Bagó','Pte Perón 50',3,3035844432)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Laboratorio Rivas','Los Sauces 37',4,3012323412)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Todo Plástico','Rivera Indarte 1800',5,3099923413)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Savant','Rivera Indarte 1300',5,3009827353)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Lepetit','Trujillo 29',6,3055527353)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Montpellier','Yacarandá 200',7,2255529953)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('ISA','Los Tulipanes 4500',11,2244536953)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Biosintex','Rio de Janeiro 30',15,2299093453)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Biotenk','Ricardo Arjona 3300',16,2211193453)
+INSERT INTO Proveedores(nombre,direccion,id_localidad,cuit) values('Biosintex','Calle 11 230',19,22990223233)
+
+
+--SUCURSALES Kevin
+insert into sucursales(descripcion,direccion,id_localidad)
+values('vida y salud','Bv.San Juan 380',2)
+insert into sucursales(descripcion,direccion,id_localidad)
+values(' Farmacia Pueyrredon','Independencia 1900',4)
+insert into sucursales(descripcion,direccion,id_localidad)
+values('La vital','Punta del Sauce 2325', 1)
+insert into sucursales(descripcion,direccion,id_localidad)
+values('Farmacia Fenix','Pueyrredon 720',3)
+insert into sucursales(descripcion,direccion,id_localidad)
+values('El rey de la salud','Brasil 320',5)
+
+--DESCUENTOS Gonza
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 15, 5, 20);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 3, 8, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 20, 15, 50);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (5, 12, 30, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (3, 7, 18, 5);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 25, 12, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 9, 6, 17);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 22, 21, 50);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (3, 14, 4,25);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (5, 6, 10,30);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 18, 28, 80);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 11, 14, 90);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 2, 33, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (3, 17, 9, 10);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 13, 1, 90);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (5, 8, 22, 50);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 24, 32, 90);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 4, 7, 50);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (3, 19, 16, 30);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 21, 3, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (5, 23, 25,90);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 1, 11, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 16, 19, 90);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (3, 5, 13, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (1, 27, 31, 15);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (5, 26, 17, 100);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (2, 29, 24,100);
+INSERT INTO descuentos (id_obra, id_localidad, id_suministro, descuento) VALUES (4, 7, 2,100);
+
+
+
+
+--RECETAS GUILLE
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Facundo Perales',32458758,'Carlos Gutierrez','3/9/2011',1)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Juan López',32452157,'Carlos Gutierrez','15/7/2011',2)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Ernesto López',20583457,'Carlos Gutierrez','3/11/2011',3)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Juan Torres',34527557,'Carlos Gutierrez','11/12/2011',4)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Ignacio Juarez',21572032,'Carlos Gutierrez','12/6/2013',5)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Lorenzo Cabrera',32452857,'Carlos Gutierrez','3/4/2011',6)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Julián Silva',32412227,'Carlos Gutierrez','18/4/2011',7)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Anuel Rodriguez',32022057,'Emiliano Fábregas','4/7/2015',8)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Hector Mansilla',32452154,'Emiliano Fábregas','3/4/2017',9)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Carlos Cotto',11242157,'Emiliano Fábregas','3/4/2017',10)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Jaime Tang',31220157,'Emiliano Fábregas','21/4/2017',11)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Luis Landriscina',31222257,'Emiliano Fábregas','3/4/2016',12)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Jennifer López',32252227,'Emiliano Fábregas','3/4/2018',13)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Mauricio Murua',38899657,'Emiliano Fábregas','3/4/2018',14)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Carmen Patagones',31203857,'Emiliano Fábregas','3/4/2019',15)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Laura Nuñez',34578567,'Emiliano Fábregas','3/7/2019',16)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Pedro Sanchez',31253447,'Emiliano Fábregas','3/4/2020',17)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Jose Altamirano',12547157,'Miguel Otermín','22/7/2020',18)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Ricardo Rueda',34578157,'Miguel Otermín','3/4/2020',19)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Seferino Quintana',24572157,'Miguel Otermín','3/4/2020',20)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Miguel Cervantes',32412237,'Miguel Otermín','3/4/2021',21)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Martín Martinelli',32425757,'Miguel Otermín','12/6/2021',22)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Fabio Luchetti',32111047,'Miguel Otermín','23/5/2021',23)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Ursula Herrera',32563368,'Miguel Otermín','4/6/2021',24)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Jose Quintanilla',34254754,'Miguel Otermín','1/5/2022',25)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Julio Aparicio',38956854,'Miguel Otermín','1/6/2022',26)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Armando Cerca',47582157,'Miguel Otermín','3/3/2022',27)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Rodrigo De la Serna',12452157,'Miguel Otermín','9/6/2022',28)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Ramiro Raies',14254157,'Miguel Otermín','6/6/2022',29)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Carla Dominguez',12444157,'Miguel Otermín','6/10/2022',29)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Fernando Fernandez',41252157,'Miguel Otermín','9/6/2022',29)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Marcela Morelo',145521456,'Patricia Gomez','9/6/2022',11)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Cristina Quilmes',44652145,'Patricia Gomez','9/6/2022',11)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Maria Gutierrez',44752158,'Patricia Gomez','17/6/2022',30)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Nadia Noya',44952145,'Patricia Gomez','17/6/2023',22)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Joaquin Villarreal',32444457,'Patricia Gomez','12/6/2023',5)
+INSERT INTO recetas(paciente,DNI,medico,fecha,id_suministro) values('Lorena Torrecilla',40452188,'Patricia Gomez','12/6/2023',2)
+
+
+--stocks (id_sucursal, id_suministro, stock)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,1,1300)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,2,1900)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(5,3,1750)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(5,4,1750)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(5,5,1500)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,6,6000)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,7,1200)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,8,1200)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,9,1200)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,10,1234)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,11,1234)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,12,1211)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,13,1234)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,14,1234)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,15,1004)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,16,1885)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,17,1234)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,18,1233)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,19,1400)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,20,555)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,21,2586)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,22,10)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,23,45)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,24,60)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(3,25,4250)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(4,26,4000)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(4,27,7500)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(4,28,1200)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(4,29,500)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,30,550)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,31,100)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,32,100)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(2,33,110)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,34,1200)
+INSERT INTO stocks(id_sucursal,id_suministro,stock) values(1,36,450)
+
+--TABLAS MAESTRO DETALLE
+
+--facturas BRENDA
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('10/08/2023', 15, 3, 6, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('17/03/2023', 2, 5, 2, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('09/04/2023', 35, 4, 1, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('24/08/2023', 7, 1, 8, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('06/03/2023', 31, 2, 10, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('05/05/2023', 20, 3, 5, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('01/01/2023', 8, 4, 7, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('02/04/2022', 6, 5, 9, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('03/05/2022', 10, 1, 3, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('04/06/2022', 24, 2, 6, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('05/07/2022', 13, 4, 7, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('06/09/2022', 17, 5, 4, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('20/10/2021', 5, 1, 2, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('21/11/2021', 21, 3, 10, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('22/12/2021', 36, 2, 8, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('23/01/2021', 29, 5, 1, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('24/02/2021', 37, 4, 5, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('25/03/2021', 26, 1, 9, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('26/04/2021', 14, 2, 3, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('27/05/2021', 32, 3, 7, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('28/06/2020', 28, 4, 2, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('29/07/2020', 22, 5, 6, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('30/09/2020', 11, 1, 8, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('12/09/2015', 38, 2, 10, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('10/10/2015', 9, 2, 7, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('21/11/2015', 17, 4, 8, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('22/12/2015', 21, 1, 5, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('23/01/2018', 28, 2, 10, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('24/02/2018', 30, 3, 3, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('25/03/2018', 12, 4, 9, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('26/04/2018', 22, 5, 7, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('27/05/2018', 38, 1, 2, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('28/06/2018', 13, 2, 4, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('29/07/2019', 35, 3, 6, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('30/09/2019', 27, 4, 8, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('01/10/2017', 19, 5, 10, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('04/07/2017', 4, 1, 5, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('30/09/2017', 16, 2, 2, 1);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('30/03/2017', 11, 3, 9, 0);
+INSERT INTO facturas (fecha, id_cliente, id_sucursal, id_empleado, pagado) VALUES('11/11/2017', 6, 4, 7, 1);
+--detalles facturas BRENDA
+
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (1, 1, 1, 5, 200)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (1, 3, 1, 5, 1000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (2, 5, 2, 3, 1100)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (2, 6, 2, 3, 2000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (2, 7, 2, 3, 2500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (3, 3, 3, 1, 1000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (4, 11, 4, 4, 1500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (4, 12, 4, 4, 900)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (4, 13, 4, 4, 1500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (5, 15, 5, 2, 3000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (5, 16, 5, 2, 200)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (6, 6, 6, 1, 2000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (7, 17, 7, 4, 800)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (7, 18, 7, 4, 350)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (7, 19, 7, 4, 500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (7, 20, 7, 4, 1000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (8, 8, 8, 3, 1800)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (9, 9, 9, 1, 3000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (9, 10, 9, 1, 900)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (10, 1, 10, 1, 200)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (10, 2, 10, 1, 500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (11, 7, 11, 3, 2500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (11, 8, 11, 3, 1800)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (11, 9, 11, 3, 3000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (11, 10, 11, 3, 900)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (12, 12, 12, 5, 900)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (13, 4, 13, 3, 500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (13, 5, 13, 3, 1100)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (13, 6, 13, 3, 2000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (14, 14, 14, 2, 2500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (15, 15, 15, 4, 3000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (16, 3, 16, 1, 1000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (16, 4, 16, 1, 500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (17, 1, 17, 3, 200)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (17, 4, 17, 3, 500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (18, 7, 18, 5, 2500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (18, 8, 18, 5, 1800)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (19, 3, 19, 2, 1000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (19, 5, 19, 2, 1100)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (19, 9, 19, 2, 3000)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (20, 7, 20, 1, 2500)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio) VALUES (20, 1, 20, 1, 200)
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (21, 23, 1, 6, 2100);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (21, 12, 1, 6, 900);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (21, 5, 1, 6, 1100);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (22, 1, 2, 8, 200);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (22, 2, 2, 8, 500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (22, 5, 2, 8, 1100);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (23, 14, 3, 4, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (24, 16, 4, 9, 250);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (24, 24, 4, 9, 3500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (25, 26, 5, 2, 3000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (25, 12, 5, 2, 900);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (25, 5, 5, 2, 1100);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (26, 1, 6, 7, 200);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (26, 7, 6, 7, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (26, 15, 6, 7, 3000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (27, 7, 7, 3, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (27, 2, 7, 3, 500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (28, 3, 8, 5, 1000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (29, 5, 9, 10, 1100);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (30, 10, 10, 1, 900);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (30, 17, 10, 1, 800);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (30, 14, 10, 1, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (30, 13, 10, 1, 1500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (30, 4, 10, 1, 500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (31, 1, 11, 8, 200);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (31, 8, 11, 8, 1800);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (32, 8, 12, 7, 1800);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (33, 3, 13, 2, 1000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (33, 6, 13, 2, 2000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (33, 7, 13, 2, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (34, 18, 14, 6, 350);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (35, 18, 15, 4, 350);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (35, 1, 15, 4, 200);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (35, 4, 15, 4, 500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (36, 3, 16, 3, 1000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (36, 6, 16, 3, 2000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (37, 11, 17, 9, 1500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (38, 17, 18, 5, 800);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (39, 19, 19, 8, 500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (39, 21, 19, 8, 2500);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (39, 26, 19, 8, 3000);
+INSERT INTO detalles_facturas (id_factura, id_suministro, id_descuento, cantidad, precio)
+VALUES (40, 27, 20, 4, 400);
+
+--pedidos VALEN
+INSERT INTO pedidos (id_sucursal, id_proveedor, id_empleado, transportista, fecha)
+VALUES 
+(1, 3, 1, 'Juan García', '07/08/2023'),
+(2, 3, 1, 'María Rodríguez', '07/08/2023'),
+(3, 3, 1, 'Pedro López', '07/08/2023'),
+(4, 3, 1, 'Ana Martínez', '07/08/2023'),
+(5, 3, 1, 'Carlos Fernández', '07/08/2023'),
+(1, 5, 1, 'Juan García', '14/08/2023'),
+(2, 5, 1, 'María Rodríguez', '14/08/2023'),
+(3, 5, 1, 'Pedro López', '14/08/2023'),
+(4, 5, 1, 'Ana Martínez', '14/08/2023'),
+(5, 5, 1, 'Carlos Fernández', '14/08/2023'),
+(1, 6, 1, 'Juan García', '21/08/2023'),
+(2, 6, 1, 'María Rodríguez', '21/08/2023'),
+(3, 6, 1, 'Pedro López', '21/08/2023'),
+(4, 6, 1, 'Ana Martínez', '21/08/2023'),
+(5, 6, 1, 'Carlos Fernández', '21/08/2023')
+
+--detalles pedidos Gonza	 
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 7, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 15, 13);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 18, 36);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 2, 10);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 25, 10);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (1, 17, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (2, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (3, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (4, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (5, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (6, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (7, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (8, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (9, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (10, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (11, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (12, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (13, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (14, 17, 44);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 5, 20);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 12, 30);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 7, 40);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 15, 45);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 6, 35);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 9, 25);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 18, 50);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 22, 15);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 30, 12);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 2, 48);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 8, 22);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 10, 38);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 19, 42);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 25, 49);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 14, 32);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 27, 28);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 3, 18);
+INSERT INTO detalles_pedidos (id_pedidos, id_suministro, cantidad) VALUES (15, 17, 44);
+
+--contactos KEVIN
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'351231569',2,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'farmacia_123@gmail.com.ar',1,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'4898838',3,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'farmacia_24@gmail.com',4,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'farmacia_123',null,5,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'4898838',null,null,1,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'351323145',null,2,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'obra_social12',null,3,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'obra_social12@gmail.com',null,4,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'obra_social5',null,5,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'obra_social32',null,3,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'obra_social1@gmail.com',null,null,1,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'351132444',null,null,2,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'4891241',null,null,3,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'ob12313@gmail.com',null,null,11,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'obra_social12@gmail.com',null,null,10,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'381412421',null,null,12,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'31124152',null,null,2,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'cliente13@gmail.com',null,null,13,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'35122414',null,null,null,2,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'empleado3@gmail.com',null,null,null,3,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'empleado@gmail.com',null,null,null,4,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'35124212',null,null,null,15,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'proveedor123@gmail.com',null,null,null,null,1)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'provedor44',null,null,null,null,3)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'381564888',null,null,null,null,2)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'proveedor4@gmail.com',null,null,null,null,4)
+
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 1, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 2, 3);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 3, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 4, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 5, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 6, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 7, 2);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 8, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 9, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 10, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 11, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 12, 3);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 13, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 14, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 15, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 16, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 17, 2);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 18, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 19, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 20, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 21, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 22, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 23, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 24, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 25, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 26, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 27, 3);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 28, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 29, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 30, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 31, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 32, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 33, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 34, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 35, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 36, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 37, 2);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 38, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 39, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 40, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 7, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 3, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 15, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 34, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 16, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (1, 12, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (2, 18, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (4, 26, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (5, 23, 1);
+INSERT INTO medios_pagos_X_factura (id_medio_pago, id_factura, cuotas)
+VALUES (3, 29, 1);
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'raven_23@gmail.com',1,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'156933480',2,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'3517823499',4,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'jaja@gmail.com',1,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'433567',3,null,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'451872',null,null,1,null, null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'456789',5,null,5,2,4)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'782399',1,1,3,1,8)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'152464',null,null,2,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(1,'159883456',null,null,9,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'gonza.gonza@gmail.com',null,null,null,3,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'sql_hola@gmail.com',null,null,8,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(3,'998334',null,null,3,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'brenda@gmail.com',null,null,2,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(2,'12.mundo@gmail.com',null,1,null,null,null)
+insert into contactos(id_tipos_contacto,descripcion,id_obra,id_sucursal,id_cliente,id_empleado,id_proveedor)
+values(5,'instagram',1,null,null,null,null)
+insert into facturas values (2023-08-11,1,2,1,1)
+insert into facturas (fecha,id_cliente,id_sucursal,id_empleado,pagado)
+values('10/02/2022',6,5,4,01)
+insert into facturas (fecha,id_cliente,id_sucursal,id_empleado,pagado)
+values('15/07/2022',10,1,7,01)
+insert into facturas (fecha,id_cliente,id_sucursal,id_empleado,pagado)
+values('25/05/2022',10,1,2,01)
+insert into facturas (fecha,id_cliente,id_sucursal,id_empleado,pagado)
+values('29/12/2022',10,1,5,01)
